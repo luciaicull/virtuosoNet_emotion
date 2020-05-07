@@ -338,7 +338,6 @@ def apply_tempo_perform_features(xml_doc, xml_notes, features, start_time=0, pre
         previous_sec = corresp_tempo.time_position
         passed_duration = note.note_duration.xml_position + \
             xml_dev - corresp_tempo.xml_position
-        # passed_duration = note.note_duration.xml_position - corresp_tempo.xml_position
         passed_second = passed_duration / \
             note.state_fixed.divisions / corresp_tempo.qpm * 60
 
@@ -347,18 +346,11 @@ def apply_tempo_perform_features(xml_doc, xml_notes, features, start_time=0, pre
     for note, feat in zip(xml_notes, features):
         if not feat['xml_deviation'] == None:
             xml_deviation = feat['xml_deviation'] * note.state_fixed.divisions
-            # if feat.xml_deviation >= 0:
-            #     xml_deviation = (feat.xml_deviation ** 2) * note.state_fixed.divisions
-            # else:
-            #     xml_deviation = -(feat.xml_deviation ** 2) * note.state_fixed.divisions
         else:
             xml_deviation = 0
 
         note.note_duration.time_position = cal_time_position_with_tempo(
             note, xml_deviation, tempos)
-
-        # if not feat['xml_deviation'] == None:
-        #     note.note_duration.time_position += feat['xml_deviation']
 
         end_note = copy.copy(note)
         end_note.note_duration = copy.copy(note.note_duration)

@@ -271,28 +271,3 @@ def criterion(pred, target, model_config, aligned_status=1):
         print('Undefined loss type:', model_config.loss_type)
 
 
-
-# if LOSS_TYPE == 'MSE':
-#     def criterion(pred, target, aligned_status=1):
-#         if isinstance(aligned_status, int):
-#             data_size = pred.shape[-2] * pred.shape[-1]
-#         else:
-#             data_size = th.sum(aligned_status).item() * pred.shape[-1]
-#             if data_size == 0:
-#                 data_size = 1
-#         if target.shape != pred.shape:
-#             print('Error: The shape of the target and prediction for the loss calculation is different')
-#             print(target.shape, pred.shape)
-#             return th.zeros(1).to(DEVICE)
-#         return th.sum(((target - pred) ** 2) * aligned_status) / data_size
-# elif LOSS_TYPE == 'CE':
-#     # criterion = nn.CrossEntropyLoss()
-#     def criterion(pred, target, aligned_status=1):
-#         if isinstance(aligned_status, int):
-#             data_size = pred.shape[-2] * pred.shape[-1]
-#         else:
-#             data_size = th.sum(aligned_status).item() * pred.shape[-1]
-#             if data_size ==0:
-#                 data_size = 1
-#                 print('data size for loss calculation is zero')
-#         return -1 * th.sum((target * th.log(pred) + (1-target) * th.log(1-pred)) * aligned_status) / data_size
