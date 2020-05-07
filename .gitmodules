@@ -5,3 +5,4 @@
 [submodule "pyScoreParser/midi_utils"]
 	path = pyScoreParser/midi_utils
 	url = https://github.com/mac-marg-pianist/midi_utils.git
+	branch = continuos_pedal
