@@ -256,8 +256,6 @@ class HAN_Integrated(nn.Module):
                 zero_mean = torch.zeros(self.config.encoded_vector_size)
                 one_std = torch.zeros(self.config.encoded_vector_size)
                 perform_z = self.reparameterize(zero_mean, one_std).to(self.device)
-            # if type(initial_z) is list:
-            #     perform_z = self.reparameterize(torch.Tensor(initial_z), torch.Tensor(initial_z)).to(self.device)
             elif not initial_z.is_cuda:
                 perform_z = torch.Tensor(initial_z).to(self.device).view(1,-1)
             else:
@@ -352,16 +350,12 @@ class HAN_Integrated(nn.Module):
                 if self.config.is_teacher_force:
                     true_tempos = self.note_tempo_infos_to_beat(y, beat_numbers, start_index, QPM_INDEX)
 
-                # prev_out = y[0, 0, :]
-                # prev_tempo = y[:, 0, QPM_INDEX]
                 prev_out = torch.zeros(self.config.output_size).to(self.device)
                 prev_tempo = prev_out[QPM_INDEX:QPM_INDEX+1]
                 prev_beat = -1
                 prev_beat_end = 0
                 out_total = torch.zeros(num_notes, self.config.output_size).to(self.device)
                 prev_out_list = []
-                # if args.beatTempo:
-                #     prev_out[0] = tempos_spanned[0, 0, 0]
                 has_ground_truth = y.size(1) > 1
                 if self.config.is_baseline:
                     for i in range(num_notes):
@@ -444,35 +438,27 @@ class HAN_Integrated(nn.Module):
             else:  # non autoregressive
                 qpm_primo = x[:,:,QPM_PRIMO_IDX].view(1,-1,1)
                 tempo_primo = x[:,:,TEMPO_PRIMO_IDX:].view(1,-1,2)
-                # beat_tempos = self.note_tempo_infos_to_beat(y, beat_numbers, start_index, QPM_INDEX)
+                
                 beat_qpm_primo = qpm_primo[0,0,0].repeat((1, num_beats, 1))
                 beat_tempo_primo = tempo_primo[0,0,:].repeat((1, num_beats, 1))
                 beat_tempo_vector = self.note_tempo_infos_to_beat(x, beat_numbers, start_index, TEMPO_IDX)
                 if 'beat_hidden_out' not in locals():
                     beat_hidden_out = beat_out_spanned
                 num_beats = beat_hidden_out.size(1)
-                # score_z_beat_spanned = score_z.repeat(num_beats,1).view(1,num_beats,-1)
+
                 perform_z_beat_spanned = perform_z.repeat(num_beats,1).view(1,num_beats,-1)
                 beat_tempo_cat = torch.cat((beat_hidden_out, beat_qpm_primo, beat_tempo_primo, beat_tempo_vector, perform_z_beat_spanned), 2)
                 beat_forward, tempo_hidden = self.beat_tempo_forward(beat_tempo_cat, tempo_hidden)
                 tempos = self.beat_tempo_fc(beat_forward)
                 num_notes = note_out.size(1)
                 tempos_spanned = self.span_beat_to_note_num(tempos, beat_numbers, num_notes, start_index)
-                # y[0, :, 0] = tempos_spanned.view(-1)
-
-                # mean_velocity_info = x[:, :, mean_vel_start_index:mean_vel_start_index+4].view(1,-1,4)
-                # dynamic_info = torch.cat((x[:, :, mean_vel_start_index + 4].view(1,-1,1),
-                #                           x[:, :, vel_vec_start_index:vel_vec_start_index + 4]), 2).view(1,-1,5)
-
+                
                 out_combined = torch.cat((
-                    note_out, beat_out_spanned, measure_out_spanned,
-                    # qpm_primo, tempo_primo, mean_velocity_info, dynamic_info,
-                    perform_z_batched), 2)
+                    note_out, beat_out_spanned, measure_out_spanned, perform_z_batched), 2)
 
                 out, final_hidden = self.output_lstm(out_combined, final_hidden)
 
                 out = self.fc(out)
-                # out = torch.cat((out, trill_out), 2)
 
                 out = torch.cat((tempos_spanned, out), 2)
                 score_combined = torch.cat((
@@ -528,10 +514,7 @@ class HAN_Integrated(nn.Module):
         eps = torch.randn_like(std)
         return eps.mul(std).add_(mu)
 
-    # def decode_with_net(self, z, decode_network):
-    #     decode_network
-    #     return
-
+    
     def sum_with_attention(self, hidden, attention_net):
         attention = attention_net(hidden)
         attention = self.softmax(attention)

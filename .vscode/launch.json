@@ -1,0 +1,54 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            
+            "name": "Python: Module",
+            "type": "python",
+            "request": "launch",
+            /*
+            "module": "virtuosoNet",
+            "cwd": "/home/yoojin/repositories/projects",
+            */
+            "module": "pyScoreParser.generate_data",
+            "cwd": "/home/yoojin/repositories/projects/virtuosoNet",
+            "console": "integratedTerminal",
+            "args": ["--emotion_path",
+                     "/home/yoojin/data/emotionDataset/test/total",
+                     "--emotion_save_path",
+                     "/home/yoojin/data/emotionDataset/test/save"]
+            /*
+            "args": [
+                "--data_path",
+                "/home/yoojin/data/emotionDataset/data_with_emotion_feature_test/save/",
+                "--checkpoints_folder",
+                "/home/yoojin/repositories/virtuosoNet/virtuoso/checkpoints/test/",
+                "--evals_folder",
+                "/home/yoojin/repositories/virtuosoNet/virtuoso/evals/",
+                "--logs_folder",
+                "/home/yoojin/repositories/virtuosoNet/virtuoso/logs/test/",
+                "--parameters_folder",
+                "/home/yoojin/repositories/virtuosoNet/virtuoso/parameters/test",
+                "--modelCode",
+                "han_note_ar",
+                "-sessMode",
+                "train"
+            ]
+            */
+            /*
+            "args": ["-sessMode", "test",
+                     "--modelCode", "han_note_ar",
+                     "--data_path", "/home/yoojin/data/20200422/save/",
+                     "--parameters_folder", "/home/yoojin/repositories/virtuosoNet/virtuoso/parameters/parameters_for_guide/",
+                     "--test_model_path", "/home/yoojin/repositories/virtuosoNet/virtuoso/checkpoints/checkpoint_for_guide/han_note_ar_checkpoint.pth.tar",
+                     "--test_hierarchy_model_path", "/home/yoojin/repositories/virtuosoNet/virtuoso/checkpoints/checkpoint_for_guide/han_measure_ar_checkpoint.pth.tar",
+                     "--test_trill_model_path", "/home/yoojin/repositories/virtuosoNet/virtuoso/checkpoints/checkpoint_for_guide/trill_default_best.pth.tar",
+                     "--test_result_path", "/home/yoojin/repositories/virtuosoNet/virtuoso/test_results/20200501"
+                    ]
+            */
+        }
+    ]
+}

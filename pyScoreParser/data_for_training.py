@@ -23,6 +23,10 @@ class PairDataset:
         self.dataset_path = dataset.path
         self.data_pairs = []
         self.feature_stats = None
+
+        self._initialize_data_pairs(dataset)
+        
+    def _initialize_data_pairs(self, dataset):
         for piece in dataset.pieces:
             for performance in piece.performances:
                 self.data_pairs.append(ScorePerformPairData(piece, performance))
@@ -113,6 +117,56 @@ class PairDataset:
   
         with open(save_folder / "stat.dat", "wb") as f:
             pickle.dump(self.feature_stats, f, protocol=2)
+
+
+class ScorePerformPairData_Emotion(ScorePerformPairData):
+    def __init__(self, piece, perform):
+        super().__init__(piece, perform)
+        self.emotion = perform.emotion
+
+
+class EmotionPairDataset(PairDataset):
+    def __init__(self, dataset):
+        self.data_pair_set_by_piece = []
+        super().__init__(dataset)
+        
+    
+    def _initialize_data_pairs(self, dataset):
+        for piece in dataset.pieces:
+            tmp_set = []
+            for performance in piece.performances:
+                pair_data = ScorePerformPairData_Emotion(piece, performance)
+                self.data_pairs.append(pair_data)
+                tmp_set.append(pair_data)
+
+            tmp_set = sorted(tmp_set, key=lambda pair:pair.emotion)
+            assert len(tmp_set) is 5
+            self.data_pair_set_by_piece.append(tmp_set)
+
+    def save_features_for_virtuosoNet(self, save_folder):
+        '''
+        Convert features into format of VirtuosoNet training data
+        :return: None (save file)
+        '''
+        def _flatten_path(file_path):
+            return '_'.join(file_path.parts)
+
+        save_folder = Path(save_folder)
+        split_types = ['train', 'valid', 'test']
+
+        save_folder.mkdir(exist_ok=True)
+        for split in split_types:
+            (save_folder / split).mkdir(exist_ok=True)
+
+        training_data = []
+        validation_data = []
+        test_data = []
+
+        for pair_set in tqdm(self.data_pair_set_by_piece):
+            formatted_data = dict()
+            original_emotion_data = pair_set[0]
+            for i, pair_data in enumerate(pair_set):
+                pass
         
 
 def get_feature_from_entire_dataset(dataset, target_score_features, target_perform_features):
