@@ -5,12 +5,7 @@ import os
 import pickle
 import pandas
 import math
-import ntpath
-import shutil
-import subprocess
 from pathlib import Path
-import warnings
-import copy
 from abc import abstractmethod
 from tqdm import tqdm
 import _pickle as cPickle
@@ -21,8 +16,6 @@ from . import score_as_graph as score_graph, xml_midi_matching as matching
 from . import xml_utils
 from . import feature_extraction
 from .alignment import Alignment
-from .constants import DEFAULT_PERFORM_FEATURES, DEFAULT_SCORE_FEATURES
-from .constants import ALIGN_DIR
 
 # total data class
 class DataSet:

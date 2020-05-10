@@ -1,15 +1,28 @@
+'''
 from .data_class import YamahaDataset, EmotionDataset, DataSet, DEFAULT_SCORE_FEATURES, DEFAULT_PERFORM_FEATURES
-from .data_for_training import PairDataset, EmotionPairDataset
+from .data_for_training import PairDataset
 from . import dataset_split
 import pickle
 import _pickle as cPickle
 import csv
 from .parser import get_parser
+'''
+from .parser import get_parser
+from .data_class import EmotionDataset
+from .data_for_training import EmotionPairDataset, DataGenerator
+from .dataset_split import EMOTION_VALID_LIST, EMOTION_TEST_LIST
+from .constants import DEFAULT_SCORE_FEATURES, DEFAULT_PERFORM_FEATURES, VNET_INPUT_KEYS, VNET_OUTPUT_KEYS, PRIME_VNET_OUTPUT_KEYS, VNET_INPUT_KEYS_WITH_EMOTION
+
+import pickle
 
 parser = get_parser()
 args = parser.parse_args()
+'''
 emotion_path = args.emotion_path
 emotion_save_path = args.emotion_save_path
+'''
+emotion_path = args.path.joinpath("total")
+emotion_save_path = args.path.joinpath("save")
 
 # make dataset
 emotion_dataset = EmotionDataset(
@@ -57,7 +70,9 @@ emotion_pair_data = EmotionPairDataset(emotion_dataset)
 with open(emotion_save_path + "/pairdataset.dat", "wb") as f:
     pickle.dump(emotion_pair_data, f, protocol=2)
 '''
- 
+
+# old version
+''' 
 # statistics
 emotion_pair_data.update_dataset_split_type(
     valid_set_list=dataset_split.EMOTION_VALID_LIST, test_set_list=dataset_split.EMOTION_TEST_LIST)
@@ -69,3 +84,23 @@ emotion_pair_data.update_mean_stds_of_entire_dataset()
 # features are in shape of list
 #        : (len(notes), len(features))
 emotion_pair_data.save_features_for_virtuosoNet(emotion_save_path)
+'''
+
+# new version
+if args.with_emotion:
+    input_keys = VNET_INPUT_KEYS_WITH_EMOTION
+else:
+    input_keys = VNET_INPUT_KEYS
+output_keys = VNET_OUTPUT_KEYS
+
+with_e1_qpm = args.with_e1_qpm
+
+if args.e1_to_input_feature_keys:
+    e1_to_input_feature_keys = PRIME_VNET_OUTPUT_KEYS
+else:
+    e1_to_input_feature_keys = None
+
+generator = DataGenerator(emotion_pair_data, emotion_save_path)
+generator.generate_statistics(valid_set_list=EMOTION_VALID_LIST, test_set_list=EMOTION_TEST_LIST)
+generator.save_final_feature_dataset(input_feature_keys=input_keys,
+                                     output_feature_keys=output_keys, with_e1_qpm=with_e1_qpm, e1_to_input_feature_keys=e1_to_input_feature_keys)
