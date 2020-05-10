@@ -23,6 +23,7 @@ class PairDataset:
         self.dataset_path = dataset.path
         self.data_pairs = []
         self.feature_stats = None
+        self.index_dict = None
 
         self._initialize_data_pairs(dataset)
         
@@ -125,11 +126,11 @@ class DataGenerator:
 
             for pair_data in pair_data_list:
                 feature_dict = dict()
-                feature_dict['input_data'], feature_dict['input_feature_index'] = self._convert_feature(pair_data.features, self.pair_dataset.feature_stats, keys=input_feature_keys)
+                feature_dict['input_data'], input_feature_index_dict = self._convert_feature(pair_data.features, self.pair_dataset.feature_stats, keys=input_feature_keys)
                 if e1_to_input_feature_keys:
-                    feature_dict['input_data'], feature_dict['input_feature_index'] = self._add_e1_output_feature_to_input_feature(
-                                                                                      feature_dict['input_data'], feature_dict['input_feature_index'], e1_data)
-                feature_dict['output_data'], feature_dict['output_feature_index'] = self._convert_feature(pair_data.features, self.pair_dataset.feature_stats, keys=output_feature_keys)
+                    feature_dict['input_data'], input_feature_index_dict = self._add_e1_output_feature_to_input_feature(
+                                                                            feature_dict['input_data'], input_feature_index_dict, e1_data)
+                feature_dict['output_data'], output_feature_index_dict = self._convert_feature(pair_data.features, self.pair_dataset.feature_stats, keys=output_feature_keys)
                 feature_dict['note_location'] = pair_data.features['note_location']
                 feature_dict['align_matched'] = pair_data.features['align_matched']
                 feature_dict['articulation_loss_weight'] = pair_data.features['articulation_loss_weight']
@@ -139,14 +140,18 @@ class DataGenerator:
 
                 feature_dict_list.append(feature_dict)
                 
+                if self.pair_dataset.index_dict is None:
+                    self.pair_dataset.index_dict = {'input_index_dict': input_feature_index_dict,
+                                                    'output_index_dict': output_feature_index_dict}
+
                 if with_e1_qpm and pair_data.emotion is 1:
-                    qpm_index = feature_dict['input_feature_index']['qpm_primo']['index']
+                    qpm_index = self.pair_dataset.index_dict['input_index_dict']['qpm_primo']['index']
                     e1_qpm = feature_dict['input_data'][0][qpm_index]
             
             for feature_dict in feature_dict_list:
                 if with_e1_qpm:
                     feature_dict['input_data'] = self._change_qpm_primo_to_e1_qpm_primo(
-                                                  feature_dict['input_data'], feature_dict['input_feature_index'], e1_qpm)
+                        feature_dict['input_data'], self.pair_dataset.index_dict['input_index_dict'], e1_qpm)
                 self._save_feature_dict(feature_dict, pair_data.split_type, self.pair_dataset.dataset_path)
 
     def _generate_save_folders(self):
@@ -180,7 +185,11 @@ class DataGenerator:
                 feature_len = len(value[0])
             else:
                 feature_len = 1
-            index_dict[key] = {'len': feature_len, 'index': total_feature_length}
+            
+            if key in index_dict.keys(): # since 'beat_tempo' is doubled in output_keys
+                index_dict[key]['index'] = [index_dict[key]['index'], total_feature_length]
+            else:
+                index_dict[key] = {'len': feature_len, 'index': total_feature_length}
             total_feature_length += feature_len
             
         data_array = np.zeros((feature_data['num_notes'], total_feature_length))
