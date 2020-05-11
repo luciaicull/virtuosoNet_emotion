@@ -1,35 +1,100 @@
 from pyScoreParser.constants import VNET_INPUT_KEYS, VNET_OUTPUT_KEYS
 
+class ModelConstants():
+    def __init__(self):
+        self.DROP_OUT = 0.2
+        self.is_trill_index_concated = -22 # when training trill model.. maybe wrong value
+
+        # input feature length
+        self.SCORE_INPUT = None
+        self.TEMPO_IDX = None
+        self.TEMPO_PARAM_LEN = None
+        self.QPM_PRIMO_IDX = None
+        self.TEMPO_PRIMO_IDX = None
+        self.TEMPO_PRIMO_LEN = None
+
+        # output feature length and numbers
+        self.NUM_PRIME_PARAM = 11
+        self.OUTPUT_TEMPO_PARAM_LEN = None
+        self.VEL_PARAM_IDX = None
+        self.DEV_PARAM_IDX = None
+        self.ARTICULATION_PARAM_IDX = None
+        self.PEDAL_PARAM_IDX = None
+        self.PEDAL_PARAM_LEN = None
+        self.TRILL_PARAM_IDX = None
+        self.NUM_TRILL_PARAM = None
+        self.OUTPUT_TEMPO_INDEX = None
+        self.MEAS_TEMPO_IDX = None
+        self.BEAT_TEMPO_IDX = None
+
+        
+
+def initialize_model_constants(index_dict):
+    model_constants = ModelConstants()
+    input_dict = index_dict['input_index_dict']
+    output_dict = index_dict['output_index_dict']
+    
+    model_constants.SCORE_INPUT = input_dict['total_length']
+    model_constants.TEMPO_IDX = input_dict['tempo']['index']
+    model_constants.TEMPO_PARAM_LEN = input_dict['tempo']['len']
+    model_constants.QPM_PRIMO_IDX = input_dict['qpm_primo']['index']
+    model_constants.TEMPO_PRIMO_IDX = input_dict['tempo_primo']['index']
+    model_constants.TEMPO_PRIMO_LEN = input_dict['tempo_primo']['len']
+
+    model_constants.OUTPUT_TEMPO_PARAM_LEN = output_dict['beat_tempo']['len']
+    model_constants.VEL_PARAM_IDX = output_dict['velocity']['index']
+    model_constants.DEV_PARAM_IDX = output_dict['onset_deviation']['index']
+    model_constants.ARTICULATION_PARAM_IDX = output_dict['articulation']['index']
+    model_constants.PEDAL_PARAM_IDX = output_dict['pedal_refresh_time']['index']
+    model_constants.PEDAL_PARAM_LEN = output_dict['pedal_refresh_time']['len'] \
+                                      + output_dict['pedal_cut_time']['len'] \
+                                      + output_dict['pedal_at_start']['len'] \
+                                      + output_dict['pedal_at_end']['len'] \
+                                      + output_dict['soft_pedal']['len'] \
+                                      + output_dict['pedal_refresh']['len'] \
+                                      + output_dict['pedal_cut']['len']
+    model_constants.TRILL_PARAM_IDX = output_dict['num_trills']['index']
+    model_constants.NUM_TRILL_PARAM = output_dict['num_trills']['len'] \
+                                      + output_dict['trill_last_note_velocity']['len'] \
+                                      + output_dict['trill_first_note_ratio']['len'] \
+                                      + output_dict['trill_last_note_ratio']['len'] \
+                                      + output_dict['up_trill']['len']
+    model_constants.OUTPUT_TEMPO_INDEX = output_dict['beat_tempo']['index'][0]
+    model_constants.MEAS_TEMPO_IDX = output_dict['measure_tempo']['index']
+    model_constants.BEAT_TEMPO_IDX = output_dict['beat_tempo']['index'][1]
+
+
+    return model_constants
+'''
 #SCORE_INPUT = 78 #score information only
 SCORE_INPUT = 83 # with emotion information
 DROP_OUT = 0.2
 TOTAL_OUTPUT = 16
 
 NUM_PRIME_PARAM = 11
-NUM_TEMPO_PARAM = 1
-VEL_PARAM_IDX = 1
-DEV_PARAM_IDX = 2
-PEDAL_PARAM_IDX = 3
-num_second_param = 0
-NUM_TRILL_PARAM = 5
-num_voice_feed_param = 0 # velocity, onset deviation
-num_tempo_info = 0
-num_dynamic_info = 0 # distance from marking, dynamics vector 4, mean_piano, forte marking and velocity = 4
-is_trill_index_score = -11
-is_trill_index_concated = -11 - (NUM_PRIME_PARAM + num_second_param)
+NUM_TEMPO_PARAM = 1  # utils.py -> cal_tempo_loss_in_beat // output feature len
+VEL_PARAM_IDX = 1  # utils.py -> cal_loss_by_output_type // output feature len
+DEV_PARAM_IDX = 2  # utils.py -> cal_loss_by_output_type // output feature len
+PEDAL_PARAM_IDX = 3  # utils.py -> cal_loss_by_output_type // output feature len
+#num_second_param = 0
+NUM_TRILL_PARAM = 5  # utils.py -> cal_loss_by_output_type // output feature len
+#num_voice_feed_param = 0 # velocity, onset deviation
+#num_tempo_info = 0
+#num_dynamic_info = 0 # distance from marking, dynamics vector 4, mean_piano, forte marking and velocity = 4
+#is_trill_index_score = -11
+#is_trill_index_concated = -11 - (NUM_PRIME_PARAM + num_second_param) # when training trill model
+is_trill_index_concated = -22 # only when trill model
 
-# input index
 QPM_INDEX = 0
 # VOICE_IDX = 11
 TEMPO_IDX = 26
 QPM_PRIMO_IDX = VNET_INPUT_KEYS.index('qpm_primo')
 TEMPO_PRIMO_IDX = -2
 
-# output index
 MEAS_TEMPO_IDX = VNET_OUTPUT_KEYS.index('measure_tempo')
 BEAT_TEMPO_IDX = VNET_OUTPUT_KEYS[1:].index('beat_tempo')+1
-
-
+'''
+'''
 # test_piece_list = [('schumann', 'Schumann'),
 #                 ('mozart545-1', 'Mozart'),
 #                 ('chopin_nocturne', 'Chopin'),
@@ -93,3 +158,4 @@ emotion_data_path  = [('Bach_Prelude_1', 'Bach', 1),
                       ('Clementi_op.36-1_mov3', 'Haydn', 3),
                       ('Kuhlau_op.20-1_mov1', 'Haydn', 2),
                       ]
+'''

@@ -1,5 +1,5 @@
 import pickle
-from . import model_constants as cons
+#from . import model_constants as cons
 
 class NetParams:
     class Param:
@@ -73,7 +73,7 @@ def load_parameters(folder_path, file_name):
         return net_params
 
 
-def initialize_model_parameters_by_code(args):
+def initialize_model_parameters_by_code(args, cons):
     model_config = ModelConfig()
     model_config.input_size = cons.SCORE_INPUT
     model_config.output_size = cons.NUM_PRIME_PARAM

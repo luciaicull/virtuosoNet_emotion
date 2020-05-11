@@ -13,7 +13,7 @@ from .utils import categorize_value_to_vector
 from . import data_process as dp  # maybe confuse with dynamic programming?
 from . import graph
 from . import utils
-from . import model_constants as const
+#from . import model_constants as const
 from . import model
 from torch.utils.tensorboard import SummaryWriter
 
@@ -33,7 +33,8 @@ def train(args,
           device,
           optimizer, 
           bins,
-          criterion):
+          criterion,
+          constants):
     logdir = Path(args.logs_folder)
     train_logdir = logdir.joinpath('train')
     train_logdir.mkdir(exist_ok=True)
@@ -157,7 +158,7 @@ def train(args,
                                 'slice_idx': slice_idx, 'kld_weight': kld_weight}
                 try:
                     tempo_loss, vel_loss, dev_loss, articul_loss, pedal_loss, trill_loss, kld = \
-                        utils.batch_train_run(training_data, model=train_model, args=args, optimizer=optimizer)
+                        utils.batch_train_run(training_data, model=train_model, args=args, optimizer=optimizer, const=constants)
                 except Exception as ex:
                     pass
                 #    print(ex)

@@ -6,9 +6,9 @@ from torch.autograd import Variable
 import random
 import numpy
 import math
-from . import model_constants as cons
+#from . import model_constants as cons
 
-
+'''
 DROP_OUT = 0.1
 
 QPM_INDEX = 0
@@ -20,7 +20,7 @@ LEN_DYNAMICS_VEC = 4
 QPM_PRIMO_IDX = 4
 TEMPO_PRIMO_IDX = -2
 NUM_VOICE_FEED_PARAM = 2
-
+'''
 class GatedGraph(nn.Module):
     def  __init__(self, size, num_edge_style, device=0, secondary_size=0):
         super(GatedGraph, self).__init__()
@@ -111,37 +111,38 @@ class ContextAttention(nn.Module):
 
 
 class HAN_Integrated(nn.Module):
-    def __init__(self, model_config, device, step_by_step=False):
+    def __init__(self, model_config, device, cons, step_by_step=False):
         super(HAN_Integrated, self).__init__()
         self.device = device
         self.step_by_step = step_by_step
         self.config = model_config
+        self.constants = cons
 
         if self.config.is_graph:
             self.graph_1st = GatedGraph(self.config.note.size, self.config.num_edge_types)
             self.graph_between = nn.Sequential(
                 nn.Linear(self.config.note.size, self.config.note.size),
-                nn.Dropout(DROP_OUT),
+                nn.Dropout(cons.DROP_OUT),
                 # nn.BatchNorm1d(self.note_hidden_size),
                 nn.ReLU()
             )
             self.graph_2nd = GatedGraph(self.config.note.size, self.config.num_edge_types)
         else:
             self.lstm = nn.LSTM(self.config.note.size, self.config.note.size, self.config.note.layers,
-                                batch_first=True, bidirectional=True, dropout=DROP_OUT)
+                                batch_first=True, bidirectional=True, dropout=cons.DROP_OUT)
 
         if not self.config.is_baseline:
             if self.config.is_graph:
                 self.beat_attention = ContextAttention(self.config.note.size * 2, self.config.num_attention_head)
                 self.beat_rnn = nn.LSTM(self.config.note.size * 2, self.config.beat.size,
-                                        self.config.beat.layers, batch_first=True, bidirectional=True, dropout=DROP_OUT)
+                                        self.config.beat.layers, batch_first=True, bidirectional=True, dropout=cons.DROP_OUT)
             else:
                 self.voice_net = nn.LSTM(self.config.note.size, self.config.voice.size, self.config.voice.layers,
-                                         batch_first=True, bidirectional=True, dropout=DROP_OUT)
+                                         batch_first=True, bidirectional=True, dropout=cons.DROP_OUT)
                 self.beat_attention = ContextAttention((self.config.note.size + self.config.voice.size) * 2,
                                                        self.config.num_attention_head)
                 self.beat_rnn = nn.LSTM((self.config.note.size + self.config.voice.size) * 2, self.config.beat.size,
-                                        self.config.beat.layers, batch_first=True, bidirectional=True, dropout=DROP_OUT)
+                                        self.config.beat.layers, batch_first=True, bidirectional=True, dropout=cons.DROP_OUT)
             self.measure_attention = ContextAttention(self.config.beat.size*2, self.config.num_attention_head)
             self.measure_rnn = nn.LSTM(self.config.beat.size * 2, self.config.measure.size, self.config.measure.layers,
                                        batch_first=True, bidirectional=True)
@@ -175,13 +176,13 @@ class HAN_Integrated(nn.Module):
 
         self.note_fc = nn.Sequential(
             nn.Linear(self.config.input_size, self.config.note.size),
-            nn.Dropout(DROP_OUT),
+            nn.Dropout(cons.DROP_OUT),
             nn.ReLU(),
             nn.Linear(self.config.note.size, self.config.note.size),
-            nn.Dropout(DROP_OUT),
+            nn.Dropout(cons.DROP_OUT),
             nn.ReLU(),
             nn.Linear(self.config.note.size, self.config.note.size),
-            nn.Dropout(DROP_OUT),
+            nn.Dropout(cons.DROP_OUT),
             nn.ReLU(),
         )
 
@@ -202,15 +203,15 @@ class HAN_Integrated(nn.Module):
             self.performance_measure_attention = ContextAttention(self.config.encoder.size * 2, self.config.encoder.size * 2)
         self.performance_embedding_layer = nn.Sequential(
             nn.Linear(self.config.output_size, self.config.note.size),
-            nn.Dropout(DROP_OUT),
+            nn.Dropout(cons.DROP_OUT),
             nn.ReLU(),
             nn.Linear(self.config.note.size, self.config.note.size),
-            nn.Dropout(DROP_OUT),
+            nn.Dropout(cons.DROP_OUT),
             nn.ReLU()
         )
         self.performance_contractor = nn.Sequential(
             nn.Linear(self.config.encoder.input, self.config.encoder.size),
-            nn.Dropout(DROP_OUT),
+            nn.Dropout(cons.DROP_OUT),
             # nn.BatchNorm1d(self.encoder_size),
             nn.ReLU()
         )
@@ -222,7 +223,7 @@ class HAN_Integrated(nn.Module):
 
         self.style_vector_expandor = nn.Sequential(
             nn.Linear(self.config.encoded_vector_size, self.config.encoder.size),
-            nn.Dropout(DROP_OUT),
+            nn.Dropout(cons.DROP_OUT),
             nn.ReLU()
         )
 
@@ -344,14 +345,17 @@ class HAN_Integrated(nn.Module):
         else:   # han_single_ar, han_note_ar
             final_hidden = self.init_hidden(1, 1, x.size(0), self.config.final.size)
             if self.step_by_step: # model with 'ar'
-                qpm_primo = x[:, 0, QPM_PRIMO_IDX]
-                tempo_primo = x[0, 0, TEMPO_PRIMO_IDX:]
+                qpm_primo = x[:, 0, self.constants.QPM_PRIMO_IDX]
+                tempo_primo = x[0, 0,
+                                self.constants.TEMPO_PRIMO_IDX:self.constants.TEMPO_PRIMO_IDX+self.constants.TEMPO_PRIMO_LEN]
 
                 if self.config.is_teacher_force:
-                    true_tempos = self.note_tempo_infos_to_beat(y, beat_numbers, start_index, QPM_INDEX)
+                    true_tempos = self.note_tempo_infos_to_beat(
+                        y, beat_numbers, start_index, self.constants.OUTPUT_TEMPO_INDEX)
 
                 prev_out = torch.zeros(self.config.output_size).to(self.device)
-                prev_tempo = prev_out[QPM_INDEX:QPM_INDEX+1]
+                prev_tempo = prev_out[self.constants.OUTPUT_TEMPO_INDEX:
+                                      self.constants.OUTPUT_TEMPO_INDEX+1]
                 prev_beat = -1
                 prev_beat_end = 0
                 out_total = torch.zeros(num_notes, self.config.output_size).to(self.device)
@@ -394,7 +398,7 @@ class HAN_Integrated(nn.Module):
                                                             result_nodes[current_beat, :],
                                                             measure_perform_style[0, current_measure, :])).view(1, 1, -1)
                             else:
-                                beat_tempo_vec = x[0, i, TEMPO_IDX:TEMPO_IDX + 5]
+                                beat_tempo_vec = x[0, i, self.constants.TEMPO_IDX:self.constants.TEMPO_IDX + self.constants.TEMPO_PARAM_LEN]
                                 beat_tempo_cat = torch.cat((beat_hidden_out[0, current_beat, :], measure_hidden_out[0, current_measure,:], prev_tempo,
                                                             qpm_primo, tempo_primo, beat_tempo_vec,
                                                             result_nodes[current_beat, :], perform_z)).view(1, 1, -1)
@@ -436,12 +440,12 @@ class HAN_Integrated(nn.Module):
                     hidden_total = torch.cat((note_out, beat_out_spanned, measure_out_spanned), 2)
                     return out_total, perform_mu, perform_var, hidden_total
             else:  # non autoregressive
-                qpm_primo = x[:,:,QPM_PRIMO_IDX].view(1,-1,1)
-                tempo_primo = x[:,:,TEMPO_PRIMO_IDX:].view(1,-1,2)
+                qpm_primo = x[:,:,self.constants.QPM_PRIMO_IDX].view(1,-1,1)
+                tempo_primo = x[:, :, self.constants.TEMPO_PRIMO_IDX:self.constants.TEMPO_PRIMO_IDX+self.constants.TEMPO_PRIMO_LEN].view(1, -1, 2)
                 
                 beat_qpm_primo = qpm_primo[0,0,0].repeat((1, num_beats, 1))
                 beat_tempo_primo = tempo_primo[0,0,:].repeat((1, num_beats, 1))
-                beat_tempo_vector = self.note_tempo_infos_to_beat(x, beat_numbers, start_index, TEMPO_IDX)
+                beat_tempo_vector = self.note_tempo_infos_to_beat(x, beat_numbers, start_index, self.constants.TEMPO_IDX)
                 if 'beat_hidden_out' not in locals():
                     beat_hidden_out = beat_out_spanned
                 num_beats = beat_hidden_out.size(1)
@@ -581,8 +585,8 @@ class HAN_Integrated(nn.Module):
             if cur_beat > prev_beat:
                 if index is None:
                     beat_tempos.append(y[0,i,:])
-                elif index == TEMPO_IDX:
-                    beat_tempos.append(y[0,i,TEMPO_IDX:TEMPO_IDX+5])
+                elif index == self.constants.TEMPO_IDX:
+                    beat_tempos.append(y[0, i, self.constants.TEMPO_IDX:self.constants.TEMPO_IDX+self.constants.TEMPO_PARAM_LEN])
                 else:
                     beat_tempos.append(y[0,i,index])
                 prev_beat = cur_beat
@@ -633,10 +637,11 @@ class HAN_Integrated(nn.Module):
 
 
 class TrillRNN(nn.Module):
-    def __init__(self, model_config, device):
+    def __init__(self, model_config, device, constants):
         super(TrillRNN, self).__init__()
         self.device = device
         self.config = model_config
+        self.constants = constants
         #self.hidden_size = network_parameters.note.size
         #self.num_layers = network_parameters.note.layers
         #self.input_size = network_parameters.input_size
@@ -651,7 +656,7 @@ class TrillRNN(nn.Module):
         self.note_fc = nn.Sequential(
             nn.Linear(self.config.input_size, self.config.note.size),
             nn.ReLU(),
-            nn.Dropout(DROP_OUT),
+            nn.Dropout(self.constants.DROP_OUT),
             nn.Linear(self.config.note.size, self.config.note.size),
             nn.ReLU(),
         )
@@ -661,7 +666,7 @@ class TrillRNN(nn.Module):
         self.out_fc = nn.Sequential(
             nn.Linear(self.config.note.size * 2, self.config.note.size),
             nn.ReLU(),
-            nn.Dropout(DROP_OUT),
+            nn.Dropout(self.constants.DROP_OUT),
             nn.Linear(self.config.note.size, self.config.output_size),
         )
         self.sigmoid = nn.Sigmoid()
