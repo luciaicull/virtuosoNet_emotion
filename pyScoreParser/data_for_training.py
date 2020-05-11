@@ -17,6 +17,8 @@ class ScorePerformPairData:
         self.split_type = None
         self.features['num_notes'] = piece.num_notes
 
+        self.score_qpm_primo = piece.score_features['qpm_primo']
+
 
 class PairDataset:
     def __init__(self, dataset):
@@ -81,6 +83,7 @@ class DataGenerator:
                 for test_name in test_set_list:
                     if test_name in path:
                         pair_data.split_type = 'test'
+                        pair_data.features['qpm_primo'] = pair_data.score_qpm_primo
                         break
 
             if pair_data.split_type is None:
