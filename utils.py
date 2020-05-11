@@ -1,7 +1,7 @@
 import torch as th
 import shutil
 #from . import model_constants as const
-from . import data_process as dp
+import data_process as dp
 
 
 def save_checkpoint(state, is_best, model_name, folder='', epoch=''):

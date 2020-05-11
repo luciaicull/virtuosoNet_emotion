@@ -4,12 +4,12 @@ import torch
 from pathlib import Path
 import numpy as np
 
-from . import xml_utils
-from . import model_constants as cons
-from . import model as modelzoo
-from . import model_parameters as param
-from . import graph
-from . import utils
+import xml_utils
+import model_constants as cons
+import model as modelzoo
+import model_parameters as param
+import graph
+import utils
 from pyScoreParser.feature_utils import NoteLocation
 from pyScoreParser import xml_utils as pSP_xml_utils
 

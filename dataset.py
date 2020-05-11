@@ -9,6 +9,7 @@ from bisect import bisect_left, bisect_right
 from pathlib import Path
 
 from pyScoreParser import xml_matching
+from pyScoreParser.data_for_training import *
 
 
 ChunkInfo = namedtuple('ChunkInfo', ['file_index', 'local_index', 'midi_index'])

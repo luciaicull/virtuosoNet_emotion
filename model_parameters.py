@@ -1,5 +1,4 @@
 import pickle
-#from . import model_constants as cons
 
 class NetParams:
     class Param:

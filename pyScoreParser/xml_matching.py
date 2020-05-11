@@ -19,10 +19,12 @@ import warnings
 
 from .musicxml_parser import MusicXMLDocument
 from .midi_utils import midi_utils
-from . import performanceWorm as perf_worm, xml_direction_encoding as dir_enc, \
-    score_as_graph as score_graph, xml_midi_matching as matching
+#from . import performanceWorm as perf_worm
+from . import xml_direction_encoding as dir_enc
+from . import score_as_graph as score_graph
+from . import xml_midi_matching as matching
 from . import pedal_cleaning
-from binary_index import binary_index
+from .utils import binary_index
 
 '''
 move cal_total_xml_length() to xml_utils.py

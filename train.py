@@ -3,19 +3,19 @@ import os
 import random
 import math
 import copy
-
 import numpy as np
 import torch as th
 import pickle
-
-from .parser import get_parser
-from .utils import categorize_value_to_vector
-from . import data_process as dp  # maybe confuse with dynamic programming?
-from . import graph
-from . import utils
-#from . import model_constants as const
-from . import model
 from torch.utils.tensorboard import SummaryWriter
+
+
+from parser import get_parser
+from utils import categorize_value_to_vector
+import data_process as dp  # maybe confuse with dynamic programming?
+import graph
+import utils
+#from . import model_constants as const
+import model
 
 def sigmoid(x, gain=1):
   # why not np.sigmoid or something?

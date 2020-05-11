@@ -7,7 +7,7 @@ def get_parser():
                         default="training_data", help="dat file name")
     parser.add_argument("-test_data", "--test_dataName", type=str,
                         default="test_data", help="dat file name")
-    parser.add_argument("-data_path", "--data_path", type=str,
+    parser.add_argument("-data_path", "--data_path", type=Path,
                         default="/home/yoojin/data/20200422/save/", help="data save path")
                           
     parser.add_argument("--resume", type=str,

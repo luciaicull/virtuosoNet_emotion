@@ -7,14 +7,14 @@ import torch as th
 import _pickle as cPickle
 import random
 
-from .parser import get_parser, get_name
-from . import model as modelzoo
-from . import model_parameters as param
-from . import train
-from . import test
-from . import utils
-from .dataset import PerformDataset
-from . import model_constants
+from parser import get_parser, get_name
+import model as modelzoo
+import model_parameters as param
+import train
+import test
+import utils
+from dataset import PerformDataset
+import model_constants
 
 
 def main():
@@ -30,7 +30,7 @@ def main():
 
     criterion = utils.criterion
 
-    with open(data_path+'dataset_info.dat', 'rb') as f:
+    with open(data_path.joinpath('dataset_info.dat'), 'rb') as f:
         u = cPickle.Unpickler(f)
         dataset_info = u.load()
     feature_stats = dataset_info['stats']

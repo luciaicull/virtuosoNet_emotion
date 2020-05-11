@@ -6,7 +6,6 @@ from torch.autograd import Variable
 import random
 import numpy
 import math
-#from . import model_constants as cons
 
 '''
 DROP_OUT = 0.1
@@ -186,9 +185,9 @@ class HAN_Integrated(nn.Module):
             nn.ReLU(),
         )
 
-        if self.config.hierarchy_level and not self.config.is_dependent:
+        if self.config.hierarchy_level and not self.config.is_dependent: # han_measure_ar
             self.fc = nn.Linear(self.config.final.size, self.config.output_size)
-        else:
+        else: # han_note_ar
             self.output_lstm = nn.LSTM(self.config.final.input, self.config.final.size, num_layers=self.config.final.layers,
                                        batch_first=True, bidirectional=False)
             if self.config.is_baseline:
