@@ -153,6 +153,8 @@ class DataGenerator:
                     feature_dict['input_data'] = self._change_qpm_primo_to_e1_qpm_primo(
                         feature_dict['input_data'], self.pair_dataset.index_dict['input_index_dict'], e1_qpm)
                 self._save_feature_dict(feature_dict, pair_data.split_type, self.pair_dataset.dataset_path)
+        
+        self._save_dataset_info()
 
     def _generate_save_folders(self):
         save_folder = Path(self.save_path)
@@ -191,7 +193,8 @@ class DataGenerator:
             else:
                 index_dict[key] = {'len': feature_len, 'index': total_feature_length}
             total_feature_length += feature_len
-            
+        
+        index_dict['total_length'] = total_feature_length
         data_array = np.zeros((feature_data['num_notes'], total_feature_length))
 
         cur_idx = 0
@@ -235,6 +238,12 @@ class DataGenerator:
             xml_name = Path(piece_path).name
             xml_path = Path(self.save_path.joinpath(split_type, xml_name))
             shutil.copy(piece_path, str(xml_path))
+    
+    def _save_dataset_info(self):
+        dataset_info = {'stats': self.pair_dataset.feature_stats,
+                        'index_dict': self.pair_dataset.index_dict}
+        with open(self.save_path.joinpath("dataset_info.dat"), "wb") as f:
+            pickle.dump(dataset_info, f, protocol=2)
 
 '''
 class PairDataset:
