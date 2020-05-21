@@ -66,10 +66,10 @@ emotion_pair_data = EmotionPairDataset(emotion_dataset)
 # reference : data_for_training.py or use test_check_features.py
 # features in ScorePerformData.features() are shape of dictionary
 #       : {feature_key1:(len(notes)), feature_key2:(len(notes)), ...}
-'''
-with open(emotion_save_path + "/pairdataset.dat", "wb") as f:
+
+with open(emotion_save_path.joinpath("pairdataset.dat"), "wb") as f:
     pickle.dump(emotion_pair_data, f, protocol=2)
-'''
+
 
 # old version
 ''' 
@@ -100,7 +100,14 @@ if args.e1_to_input_feature_keys:
 else:
     e1_to_input_feature_keys = None
 
+output_for_classifier = args.output_for_classifier
+if output_for_classifier:
+    input_keys = VNET_INPUT_KEYS
+    e1_to_input_feature_keys = PRIME_VNET_OUTPUT_KEYS
+    with_e1_qpm = True
+
 generator = DataGenerator(emotion_pair_data, emotion_save_path)
 generator.generate_statistics(valid_set_list=EMOTION_VALID_LIST, test_set_list=EMOTION_TEST_LIST)
 generator.save_final_feature_dataset(input_feature_keys=input_keys,
-                                     output_feature_keys=output_keys, with_e1_qpm=with_e1_qpm, e1_to_input_feature_keys=e1_to_input_feature_keys)
+                                     output_feature_keys=output_keys, with_e1_qpm=with_e1_qpm, e1_to_input_feature_keys=e1_to_input_feature_keys,
+                                     output_for_classifier=output_for_classifier)

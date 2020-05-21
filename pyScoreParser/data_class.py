@@ -379,6 +379,7 @@ class PerformData:
         self.tempos = []
 
         self.emotion = self._get_emotion(midi_path)
+        self.performer = self._get_performer_number(midi_path)
 
     def __str__(self):
         return str(self.__dict__)
@@ -405,6 +406,10 @@ class PerformData:
         
         return emotion
 
+    def _get_performer_number(self, midi_path):
+        midi_name = Path(midi_path).name
+        performer_number = int(midi_name.split('.s0')[-1].split('.')[0])
+        return performer_number
 
 class ScoreData:
     def __init__(self, xml_path, score_midi_path, new_alignment=False):

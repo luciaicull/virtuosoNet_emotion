@@ -12,12 +12,16 @@ class ScorePerformPairData:
     def __init__(self, piece, perform):
         self.piece_path = piece.xml_path
         self.perform_path = perform.midi_path
+        self.piece_name = Path(piece.xml_path).name
+        self.perform_name = Path(perform.midi_path).name
         self.graph_edges = piece.notes_graph
         self.features = {**piece.score_features, **perform.perform_features}
         self.split_type = None
         self.features['num_notes'] = piece.num_notes
 
         self.score_qpm_primo = piece.score_features['qpm_primo']
+        self.performance_beat_tempos = perform.beat_tempos
+        self.performance_measure_tempos = perform.measure_tempos
 
 
 class PairDataset:
@@ -39,6 +43,7 @@ class ScorePerformPairData_Emotion(ScorePerformPairData):
     def __init__(self, piece, perform):
         super().__init__(piece, perform)
         self.emotion = perform.emotion
+        self.performer = perform.performer
 
 
 class EmotionPairDataset(PairDataset):
@@ -55,9 +60,15 @@ class EmotionPairDataset(PairDataset):
                 self.data_pairs.append(pair_data)
                 tmp_set.append(pair_data)
 
-            tmp_set = sorted(tmp_set, key=lambda pair:pair.emotion)
-            assert tmp_set[0].emotion is 1
-            self.data_pair_set_by_piece.append(tmp_set)
+            tmp_set = sorted(tmp_set, key=lambda pair:pair.perform_name)
+            #assert tmp_set[0].emotion is 1
+            #self.data_pair_set_by_piece.append(tmp_set)
+            performer_set = set([pair.performer for pair in tmp_set])
+            for performer_num in performer_set:
+                performer_set = [pair for pair in tmp_set if pair.performer is performer_num]
+                performer_set = sorted(performer_set, key=lambda pair:pair.emotion)
+                self.data_pair_set_by_piece.append(performer_set)
+
             
 
 # optimized to emotion dataset
@@ -118,7 +129,7 @@ class DataGenerator:
 
         self.pair_dataset.feature_stats = stats
 
-    def save_final_feature_dataset(self, input_feature_keys=VNET_INPUT_KEYS, output_feature_keys=VNET_OUTPUT_KEYS, with_e1_qpm=False, e1_to_input_feature_keys=None):
+    def save_final_feature_dataset(self, input_feature_keys=VNET_INPUT_KEYS, output_feature_keys=VNET_OUTPUT_KEYS, with_e1_qpm=False, e1_to_input_feature_keys=PRIME_VNET_OUTPUT_KEYS, output_for_classifier=False):
         self._generate_save_folders()
 
         for pair_data_list in tqdm(self.pair_dataset.data_pair_set_by_piece):
@@ -130,9 +141,15 @@ class DataGenerator:
             for pair_data in pair_data_list:
                 feature_dict = dict()
                 feature_dict['input_data'], input_feature_index_dict = self._convert_feature(pair_data.features, self.pair_dataset.feature_stats, keys=input_feature_keys)
-                if e1_to_input_feature_keys:
+
+                if output_for_classifier:
+                    feature_dict['e1_perform_data'] = e1_data
+                elif e1_to_input_feature_keys and not output_for_classifier:
                     feature_dict['input_data'], input_feature_index_dict = self._add_e1_output_feature_to_input_feature(
                                                                             feature_dict['input_data'], input_feature_index_dict, e1_data)
+                
+                if output_for_classifier: 
+                    feature_dict['label'] = pair_data.emotion - 1
                 feature_dict['output_data'], output_feature_index_dict = self._convert_feature(pair_data.features, self.pair_dataset.feature_stats, keys=output_feature_keys)
                 feature_dict['note_location'] = pair_data.features['note_location']
                 feature_dict['align_matched'] = pair_data.features['align_matched']
@@ -217,6 +234,8 @@ class DataGenerator:
         index_dict['e1_data'] = {'index': len(input_data[0]), 'len': len(e1_data[0])}
         input_data = np.append(input_data, e1_data, axis=1) # b/c shape is (note_num, feature_num)
         
+        index_dict['total_length'] += len(e1_data[0])
+
         return input_data, index_dict
 
     def _change_qpm_primo_to_e1_qpm_primo(self, input_data, index_dict, e1_qpm):

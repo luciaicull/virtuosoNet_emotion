@@ -18,4 +18,6 @@ def get_parser():
                         default=False)
     parser.add_argument("--e1_to_input_feature_keys", type=bool,
                         default=False)
+    parser.add_argument("--output_for_classifier", type=bool,
+                        default=False)
     return parser

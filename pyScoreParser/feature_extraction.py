@@ -228,14 +228,17 @@ class PerformExtractor:
         tempos = feature_utils.cal_tempo_by_positions(piece_data.beat_positions, perform_data.valid_position_pairs)
         # update tempos for perform data
         perform_data.tempos = tempos
+        perform_data.beat_tempos = [t.qpm for t in tempos]
         return [math.log(utils.get_item_by_xml_position(tempos, note).qpm, 10) for note in piece_data.xml_notes], True
 
     def get_measure_tempo(self, piece_data, perform_data):
         tempos = feature_utils.cal_tempo_by_positions(piece_data.measure_positions, perform_data.valid_position_pairs)
+        perform_data.measure_tempos = [t.qpm for t in tempos]
         return [math.log(utils.get_item_by_xml_position(tempos, note).qpm, 10) for note in piece_data.xml_notes], True
 
     def get_section_tempo(self, piece_data, perform_data):
         tempos = feature_utils.cal_tempo_by_positions(piece_data.section_positions, perform_data.valid_position_pairs)
+        perform_data.section_tempos = [t.qpm for t in tempos]
         return [math.log(utils.get_item_by_xml_position(tempos, note).qpm, 10) for note in piece_data.xml_notes], True
 
     def get_qpm_primo(self, piece_data, perform_data, view_range=10):
