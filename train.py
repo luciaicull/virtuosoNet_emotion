@@ -156,11 +156,11 @@ def train(args,
                                 'note_locations': note_locations,
                                 'align_matched': align_matched, 'pedal_status': pedal_status,
                                 'slice_idx': slice_idx, 'kld_weight': kld_weight}
-                try:
-                    tempo_loss, vel_loss, dev_loss, articul_loss, pedal_loss, trill_loss, kld = \
+                #try:
+                tempo_loss, vel_loss, dev_loss, articul_loss, pedal_loss, trill_loss, kld = \
                         utils.batch_train_run(training_data, model=train_model, args=args, optimizer=optimizer, const=constants)
-                except Exception as ex:
-                    pass
+                #except Exception as ex:
+                #    pass
                 #    print(ex)
                 #    print(train_xy[selected_sample.index]['perform_path'])
                 tempo_loss_total.append(tempo_loss.item())
@@ -242,7 +242,7 @@ def train(args,
             # if args.loss == 'CE':
             #     test_y = categorize_value_to_vector(test_y, bins)
 
-            batch_x, batch_y = utils.handle_data_in_tensor(test_x, test_y, model.config, device)
+            batch_x, batch_y = utils.handle_data_in_tensor(test_x, test_y, model.config, device, constants)
             batch_x = batch_x.view(1, -1, model.config.input_size)
             batch_y = batch_y.view(1, -1, model.config.output_size)
             # input_y = th.Tensor(prev_feature).view((1, -1, TOTAL_OUTPUT)).to(device)
@@ -261,7 +261,7 @@ def train(args,
 
                 tempo_loss = criterion(outputs[:, :, 0:1], tempo_y, model.config)
                 vel_loss = criterion(outputs[:, :, 1:2], vel_y, model.config)
-                if args.deltaLoss:
+                if args.deltaLoss: #default=False
                     tempo_out_delta = outputs[:, 1:, 0:1] - outputs[:, :-1, 0:1]
                     tempo_true_delta = tempo_y[:, 1:, :] - tempo_y[:, :-1, :]
                     vel_out_delta = outputs[:, 1:, 1:2] - outputs[:, :-1, 1:2]
@@ -280,7 +280,7 @@ def train(args,
                     kld_loss = -0.5 * th.sum(1 + perform_var - perform_mu.pow(2) - perform_var.exp())
                     kld_loss_total.append(kld_loss.item())
             elif model.config.is_trill:
-                trill_bool = batch_x[:,:, const.is_trill_index_concated] == 1
+                trill_bool = batch_x[:,:, constants.is_trill_index_concated] == 1
                 trill_bool = trill_bool.float().view(1,-1,1).to(device)
                 trill_loss = criterion(outputs, batch_y, model.config, trill_bool)
 
@@ -293,7 +293,7 @@ def train(args,
                 kld_loss_total.append(kld_loss.item())
 
             else:
-                valid_loss, tempo_loss, vel_loss, dev_loss, articul_loss, pedal_loss = utils.cal_loss_by_output_type(outputs, batch_y, align_matched, pedal_status, args, model.config, note_locations, 0)
+                valid_loss, tempo_loss, vel_loss, dev_loss, articul_loss, pedal_loss = utils.cal_loss_by_output_type(outputs, batch_y, align_matched, pedal_status, args, model.config, note_locations, 0, constants)
                 for z in total_z:
                     perform_mu, perform_var = z
                     kld_loss = -0.5 * th.sum(1 + perform_var - perform_mu.pow(2) - perform_var.exp())

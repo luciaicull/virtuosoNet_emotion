@@ -69,7 +69,7 @@ def scale_model_prediction_to_original(args, prediction, feature_stats):
     return prediction
 
 
-def load_file_and_generate_performance(test_data, args, model, device, composer, z, start_tempo, feature_stats, return_features=False, hier_model=None, trill_model=None):
+def load_file_and_generate_performance(test_data, args, model, device, cons, composer, z, start_tempo, feature_stats, return_features=False, hier_model=None, trill_model=None):
     # mean velocity of piano and forte
     # vel_pair = (piano mean, forte mean). default: (50, 65)
     vel_pair = (int(args.velocity.split(',')[0]), int(
@@ -131,8 +131,8 @@ def load_file_and_generate_performance(test_data, args, model, device, composer,
             graphs = graph.edges_to_matrix(edges, batch_x.shape[1], model.config)
             prediction, _ = utils.run_model_in_steps(batch_x, input_y, args, graphs, note_locations, model=model, device=device, initial_z=initial_z)
 
-        trill_batch_x = torch.cat((batch_x, prediction), 2)
-        trill_prediction, _ = utils.run_model_in_steps(trill_batch_x, torch.zeros(1, num_notes, cons.NUM_TRILL_PARAM), args, graphs, note_locations, model=trill_model, device=device)
+        trill_batch_x = torch.cat((batch_x[:,:,:78], prediction), 2)
+        trill_prediction, _ = utils.run_model_in_steps(trill_batch_x, torch.zeros(1, num_notes, 5), args, graphs, note_locations, model=trill_model, device=device)
 
         prediction = torch.cat((prediction, trill_prediction), 2)
         prediction = scale_model_prediction_to_original(
@@ -161,7 +161,8 @@ def test(args,
          model,
          trill_model,
          device,
-         feature_stats):
+         feature_stats,
+         constants):
 
     hier_model = None
     model_path = args.test_model_path
@@ -196,7 +197,7 @@ def test(args,
         # load hier_model
         if model.config.is_dependent: # when model: han_note_ar
             hier_model_config = param.load_parameters(args.parameters_folder, args.hierCode + '_param')
-            hier_model = modelzoo.HAN_Integrated(hier_model_config, device, step_by_step=True).to(device)
+            hier_model = modelzoo.HAN_Integrated(hier_model_config, device, constants, step_by_step=True).to(device)
             #hier_filename = 'prime_' + args.hierCode + args.resume
             hier_checkpoint = torch.load(hier_model_path, map_location=map_location)
             hier_model.load_state_dict(hier_checkpoint['state_dict'])
@@ -210,7 +211,10 @@ def test(args,
     if args.sessMode == 'test':
         random.seed(0)
         load_file_and_generate_performance(
-            test_data, args, model, device, args.composer, args.latent, args.startTempo, feature_stats, hier_model=hier_model, trill_model=trill_model)
+            test_data, args, model, device, constants, args.composer, args.latent, args.startTempo, feature_stats, hier_model=hier_model, trill_model=trill_model)
 
-    elif args.sessMode == '':
+    elif args.sessMode == 'test_with_perform_z':
         pass
+
+
+def encode_emotion_data(path_list):

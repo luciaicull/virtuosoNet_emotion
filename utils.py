@@ -192,7 +192,7 @@ def categorize_value_to_vector(y, bins):
 def handle_data_in_tensor(x, y, model_config, device, const, hierarchy_test=False):
     x = th.Tensor(x)
     y = th.Tensor(y)
-    if model_config.hierarchy_level == 'measure': # han_measure
+    if model_config.hierarchy_level == 'measure': # han_measure, han_note
         hierarchy_output = y[:, const.MEAS_TEMPO_IDX:const.MEAS_TEMPO_IDX+2]
     elif model_config.hierarchy_level == 'beat':
         hierarchy_output = y[:, const.BEAT_TEMPO_IDX:const.BEAT_TEMPO_IDX+2]
