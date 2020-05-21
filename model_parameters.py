@@ -154,6 +154,67 @@ def initialize_model_parameters_by_code(args, cons):
             model_config.encoder.input = model_config.note.size * 2 + cons.NUM_PRIME_PARAM
             model_config.final.input = model_config.note.size * 2 + model_config.encoder.size + num_tempo_info + num_dynamic_info + model_config.output_size
 
+    elif 'direct' in args.modelCode:
+        model_config.note.layers = 2
+        model_config.note.size = 128
+        model_config.beat.layers = 2
+        model_config.beat.size = 128
+        model_config.measure.layers = 1
+        model_config.measure.size = 128
+        model_config.final.layers = 1
+        model_config.final.size = 64
+        model_config.voice.layers = 2
+        model_config.voice.size = 128
+        model_config.performance.size = 128
+
+        # net_param.num_attention_head = 1
+        model_config.encoded_vector_size = 16
+        model_config.encoder.size = 64
+        model_config.encoder.layers = 2
+        model_config.encoder.input = (model_config.note.size + model_config.beat.size +
+                                      model_config.measure.size + model_config.voice.size) * 2 \
+            + model_config.performance.size
+        num_tempo_info = 3  # qpm primo, tempo primo
+        num_dynamic_info = 0
+        model_config.final.input = (model_config.note.size + model_config.voice.size + model_config.beat.size +
+                                    model_config.measure.size) * 2 + model_config.encoder.size + \
+                                    num_tempo_info + num_dynamic_info
+
+        # since ar
+        model_config.final.input += model_config.output_size
+    
+    elif 'classifier' in args.modelCode:
+        model_config.input_size = 89
+        model_config.output_size = 11
+        
+        model_config.note.layers = 2
+        model_config.note.size = 128
+        model_config.beat.layers = 2
+        model_config.beat.size = 128
+        model_config.measure.layers = 1
+        model_config.measure.size = 128
+        model_config.final.layers = 1
+        model_config.final.size = 64
+        model_config.voice.layers = 2
+        model_config.voice.size = 128
+        model_config.performance.size = 128
+
+        # net_param.num_attention_head = 1
+        model_config.encoded_vector_size = 16
+        model_config.encoder.size = 64
+        model_config.encoder.layers = 2
+        model_config.encoder.input = (model_config.note.size + model_config.beat.size +
+                                      model_config.measure.size + model_config.voice.size) * 2 \
+            + model_config.performance.size
+        num_tempo_info = 3  # qpm primo, tempo primo
+        num_dynamic_info = 0
+        model_config.final.input = (model_config.note.size + model_config.voice.size + model_config.beat.size +
+                                    model_config.measure.size) * 2 + model_config.encoder.size + \
+            num_tempo_info + num_dynamic_info
+
+        # since ar
+        model_config.final.input += model_config.output_size
+
     elif 'trill' in args.modelCode:
         model_config.input_size = cons.SCORE_INPUT + cons.NUM_PRIME_PARAM
         model_config.output_size = cons.NUM_TRILL_PARAM
