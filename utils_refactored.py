@@ -49,35 +49,34 @@ def batch_train_run_classifier(data, model, args, optimizer, const, criterion):
     th.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
     optimizer.step()
 
-    _, predicted_class = th.max(output_vector, 0)
+    _, predicted_class = th.max(output_vector.view(5), 0)
 
     return loss, predicted_class.item()
 
 
 def batch_eval_run_classifier(data, model, args, optimizer, const, criterion):
-
-
-'''
-def run_classifer_model_in_steps(input, input_y, label, args, note_locations, model, device, criterion, initial_z=False):
-    num_notes = input.shape[1]
     with th.no_grad():
         model_eval = model.eval()
-        measure_numbers = [x.measure for x in note_locations]
-        slice_indexes = data_process.make_slicing_indexes_by_measure(
-            num_notes, measure_numbers, steps=args.valid_steps, overlap=False)
-
         total_loss = []
-        for slice_idx in slice_indexes:
+        labels = []
+        preds = []
+        for slice_idx in data['slice_indexes']:
             batch_start, batch_end = slice_idx
-            batch_input = input[:, batch_start:batch_end, :].view(1, -1, model.config.input_size)
-            batch_input_y = input_y[:, batch_start:batch_end, :].view(1, -1, model.config.output_size)
-            output_vector = model_eval(batch_input, batch_input_y, note_locations, batch_start)
-
+            data['slice_idx'] = slice_idx
+            batch_x, batch_y, batch_e1_y, label, align_matched, pedal_status, note_locations = make_tensor(data, args, const, model)
+            
+            output_vector = model_eval(batch_x, batch_y, batch_e1_y, note_locations, batch_start)
             loss = criterion(output_vector, label)
             total_loss.append(loss.item())
-        
-    return total_loss
-'''
+
+            _, predicted_class = th.max(output_vector.view(5), 0)
+            preds.append(predicted_class.item())
+            labels.append(label.item())
+    
+    return total_loss, labels, preds
+            
+
+
 
 def batch_train_run_direct(data, model, args, optimizer, const):
     batch_start, batch_end = data['slice_idx']

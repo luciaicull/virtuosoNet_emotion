@@ -23,12 +23,26 @@ class TraningSample():
         self.slice_indexes = None
 
 def get_accuracy(labels, preds):
+    '''
     labels = np.array(labels)
     preds = np.array(preds)
     correct = (labels == preds)
-    accuracy = correct.sum() / correct.size()
+    accuracy = correct.sum() / correct.size
+    '''
+    label_num = [0,0,0,0,0] # number of label 1~5
+    correct_pred_num = [0,0,0,0,0] # number of correct prediction for label 1~5
+    for label, pred in zip(labels, preds):
+        label_num[label-1] += 1
+        if label == pred:
+            correct_pred_num[label-1] += 1
+    e1_accuracy = correct_pred_num[0] / label_num[0]
+    e2_accuracy = correct_pred_num[1] / label_num[1]
+    e3_accuracy = correct_pred_num[2] / label_num[2]
+    e4_accuracy = correct_pred_num[3] / label_num[3]
+    e5_accuracy = correct_pred_num[4] / label_num[4]
+    total_accuracy = sum(correct_pred_num) / sum(label_num)
 
-    return accuracy
+    return e1_accuracy, e2_accuracy, e3_accuracy, e4_accuracy, e5_accuracy, total_accuracy
 
 def train_classifier(args, model,
                      train_data, valid_data,
@@ -100,49 +114,52 @@ def train_classifier(args, model,
             slice_idx = selected_sample.slice_indexes[selected_idx]
 
             graphs = None
-
+            '''
             key_lists = [0]
             key = 0
-
+            
             for i in range(args.num_key_augmentation):
                 while key in key_lists:
                     key = random.randrange(-5, 7)
                 key_lists.append(key)
-
+            
             for i in range(args.num_key_augmentation+1):
                 key = key_lists[i]
                 temp_train_x = data_process.key_augmentation(train_x, key)
                 kld_weight = sigmoid((NUM_UPDATED - args.kld_sig) / (args.kld_sig/10)) * args.kld_max
-
-                training_data = {'x': temp_train_x, 'y': train_y, 'label': label,
-                                'e1_data': train_e1_data,
-                                'note_locations': note_locations, 'graphs': graphs,
-                                'align_matched': align_matched, 'pedal_status': pedal_status,
-                                'slice_idx': slice_idx, 'kld_weight': kld_weight}
-                
-                loss, pred = new_utils.batch_train_run_classifier(
-                    training_data, model=model, args=args, optimizer=optimizer, const=constants, criterion=criterion)
-                
-                loss_total.append(loss.item())
-                
-                labels.append(label)
-                preds.append(pred)
-                
-                NUM_UPDATED += 1
+            '''
+            training_data = {'x': train_x, 'y': train_y, 'label': label,
+                            'e1_data': train_e1_data,
+                            'note_locations': note_locations, 'graphs': graphs,
+                            'align_matched': align_matched, 'pedal_status': pedal_status,
+                            'slice_idx': slice_idx}
+            
+            loss, pred = new_utils.batch_train_run_classifier(
+                training_data, model=model, args=args, optimizer=optimizer, const=constants, criterion=criterion)
+            
+            loss_total.append(loss.item())
+            
+            labels.append(label)
+            preds.append(pred)
+            
+            NUM_UPDATED += 1
             
             del selected_sample.slice_indexes[selected_idx]
             if len(selected_sample.slice_indexes) == 0:
                 del remaining_samples[new_index]
         
-        accuracy = get_accuracy(labels, preds)
+        e1_accuracy, e2_accuracy, e3_accuracy, e4_accuracy, e5_accuracy, total_accuracy = get_accuracy(labels, preds)
         print('===========================================================================')
-        print('Epoch[{}/{}], Loss: {: .4f}, Accuracy: {: .4f}'.format(epoch+1, args.num_epochs, np.mean(loss_total), accuracy))
+        print('Epoch[{}/{}], Loss: {: .4f}, Accuracy- e1: {: .4f}, e2: {: .4f}, e3: {: .4f}, e4: {: .4f}, e5: {: .4f}, total: {: .4f}'.format(
+            epoch+1, args.num_epochs, np.mean(loss_total), e1_accuracy, e2_accuracy, e3_accuracy, e4_accuracy, e5_accuracy, total_accuracy))
         print('===========================================================================')
 
         train_epoch_writer.add_scalar('loss', np.mean(loss_total), global_step=epoch)
 
         # start validation
         loss_total = []
+        labels = []
+        preds = []
         for xy_tuple in valid_xy:
             valid_x = xy_tuple['input_data']
             valid_y = xy_tuple['output_data']
@@ -152,32 +169,28 @@ def train_classifier(args, model,
             align_matched = xy_tuple['align_matched']['data']
             pedal_status = xy_tuple['articulation_loss_weight']['data']
 
+            measure_numbers = [x.measure for x in note_locations]
+            slice_indexes = data_process.make_slicing_indexes_by_measure(
+                            len(valid_x), measure_numbers, steps=args.valid_steps, overlap=False)
             valid_data = {'x': valid_x, 'y': valid_y, 'label': valid_label,
                           'e1_data': valid_e1_data,
                           'note_locations': note_locations, 'graphs': graphs,
                           'align_matched': align_matched, 'pedal_status': pedal_status,
-                          'slice_idx': slice_idx, 'kld_weight': kld_weight}
+                          'slice_indexes': slice_indexes}
             
-            loss, pred = new_utils.batch_eval_run_classifier(
+            loss, label, pred = new_utils.batch_eval_run_classifier(
                 valid_data, model=model, args=args, optimizer=optimizer, const=constants, criterion=criterion)
-            '''
-            batch_x = th.Tensor(test_x)
-            batch_y = th.Tensor(test_y)
-            batch_x = batch_x.to(device)
-            batch_y = batch_y[:, :constants.NUM_PRIME_PARAM].to(device) 
-            batch_x = batch_x.view(1, -1, model.config.input_size)
-            batch_y = batch_y.view(1, -1, model.config.output_size)
-            align_matched = th.Tensor(align_matched).view(1, -1, 1).to(device)
-            pedal_status = th.Tensor(pedal_status).view(1, -1, 1).to(device)
-            test_label = th.Tensor([test_label]).to(device).long() 
-            loss_list = new_utils.run_classifer_model_in_steps(batch_x, batch_y, test_label, args, note_locations, model, device, criterion)
-
-            loss_total += loss_list
-            '''
+            
+            loss_total += loss
+            labels += label
+            preds += pred
 
         mean_loss = np.mean(loss_total)
         valid_writer.add_scalar('loss', mean_loss, global_step=epoch)
-        print("Valid Loss={: .4f}".format(mean_loss))
+        e1_accuracy, e2_accuracy, e3_accuracy, e4_accuracy, e5_accuracy, total_accuracy = get_accuracy(labels, preds)
+        
+        print("Valid Loss={: .4f}, Valid Accuracy - e1: {: .4f}, e2: {: .4f}, e3: {: .4f}, e4: {: .4f}, e5: {: .4f}, total: {: .4f}".format(
+            mean_loss, e1_accuracy, e2_accuracy, e3_accuracy, e4_accuracy, e5_accuracy, total_accuracy))
 
         is_best = mean_loss < best_prime_loss
         best_prime_loss = min(mean_loss, best_prime_loss)
