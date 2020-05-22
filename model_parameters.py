@@ -184,7 +184,7 @@ def initialize_model_parameters_by_code(args, cons):
         model_config.final.input += model_config.output_size
     
     elif 'classifier' in args.modelCode:
-        model_config.input_size = 89
+        model_config.input_size = 78
         model_config.output_size = 11
         
         model_config.note.layers = 2
