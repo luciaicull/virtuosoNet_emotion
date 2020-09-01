@@ -253,6 +253,35 @@ class PerformExtractor:
 
         return math.log(qpm_primo / view_range, 10), True
 
+    def get_elongated_duration(self, piece_data, perform_data):
+        features = []
+        for i, pair in enumerate(perform_data.pairs):
+            if pair == []:
+                duration = 0
+            else:
+                note = pair['xml']
+                midi = pair['midi']
+                if midi.elongated_offset_time > midi.end:
+                    duration = midi.elongated_offset_time - midi.start
+                else:
+                    duration = midi.end - midi.start
+            features.append(duration)
+        
+        return features, True
+    
+    def get_not_elongated_duration(self, piece_data, perform_data):
+        features = []
+        for i, pair in enumerate(perform_data.pairs):
+            if pair == []:
+                duration = 0
+            else:
+                note = pair['xml']
+                midi = pair['midi']
+                duration = midi.end - midi.start
+            features.append(duration)
+
+        return features, True
+
     def get_articulation(self, piece_data, perform_data):
         features = []
         if 'beat_tempo' not in perform_data.perform_features:
