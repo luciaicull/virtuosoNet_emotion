@@ -175,6 +175,23 @@ class DataGenerator:
                 self._save_feature_dict(feature_dict, pair_data.split_type, self.pair_dataset.dataset_path)
         
         self._save_dataset_info()
+    
+    def save_final_feature_dataset_for_analysis(self, perform_feature_keys):
+        self._generate_save_folders()
+
+        for pair_data_list in tqdm(self.pair_dataset.data_pair_set_by_piece):
+            #e1_data, _ = self._convert_feature(pair_data_list[0].features, self.pair_dataset.feature_stats, keys=e1_to_input_feature_keys)
+            for pair_data in pair_data_list:
+                feature_dict = dict()
+                #feature_dict['e1_perform_data'] = e1_data
+                feature_dict['emotion_number'] = pair_data.emotion
+                feature_dict['features'] = dict()
+                for key in perform_feature_keys:
+                    feature_dict['features'][key] = pair_data.features[key]['data']
+                feature_dict['score_path'] = pair_data.piece_path
+                feature_dict['perform_path'] = pair_data.perform_path
+                self._save_feature_dict(feature_dict, pair_data.split_type, self.pair_dataset.dataset_path)
+        self._save_dataset_info()
 
     def _generate_save_folders(self):
         save_folder = Path(self.save_path)
