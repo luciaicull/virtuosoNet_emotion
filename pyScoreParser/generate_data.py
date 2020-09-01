@@ -15,6 +15,9 @@ from .constants import DEFAULT_SCORE_FEATURES, DEFAULT_PERFORM_FEATURES, VNET_IN
 
 import pickle
 
+def make_dictionary():
+    pass
+
 parser = get_parser()
 args = parser.parse_args()
 '''
@@ -54,9 +57,19 @@ print('Finished: save note matched result')
 '''
 
 # extract features
-for piece in emotion_dataset.pieces:
-    piece.extract_perform_features(DEFAULT_PERFORM_FEATURES)
-    piece.extract_score_features(DEFAULT_SCORE_FEATURES)
+if args.for_analysis:
+    score_features = ['qpm_primo']
+    perform_features = ['not_elongated_duration','elongated_duration', 'velocity', 'onset_deviation', 'articulation', 'pedal_refresh_time',
+                        'pedal_cut_time', 'pedal_at_start', 'pedal_at_end', 'soft_pedal',
+                        'pedal_refresh', 'pedal_cut', 'beat_tempo', 'beat_dynamics', 'measure_tempo', 'measure_dynamics', 'section_tempo']
+
+    for piece in emotion_dataset.pieces:
+        piece.extract_score_features(score_features)
+        piece.extract_perform_features(perform_features)
+else:
+    for piece in emotion_dataset.pieces:
+        piece.extract_perform_features(DEFAULT_PERFORM_FEATURES)
+        piece.extract_score_features(DEFAULT_SCORE_FEATURES)
 
 # make PairDatset
 emotion_pair_data = EmotionPairDataset(emotion_dataset)
@@ -86,28 +99,39 @@ emotion_pair_data.update_mean_stds_of_entire_dataset()
 emotion_pair_data.save_features_for_virtuosoNet(emotion_save_path)
 '''
 
-# new version
-if args.with_emotion:
-    input_keys = VNET_INPUT_KEYS_WITH_EMOTION
+if args.for_analysis:
+    score_features = ()
+    perform_features = ('elongated_duration', 'not_elongated_duration', 'velocity', 'onset_deviation', 'articulation', 'pedal_refresh_time',
+                        'pedal_cut_time', 'pedal_at_start', 'pedal_at_end', 'soft_pedal',
+                        'pedal_refresh', 'pedal_cut', 'beat_tempo', 'beat_dynamics', 'measure_tempo', 'measure_dynamics', 'section_tempo')
+    
+    generator = DataGenerator(emotion_pair_data, emotion_save_path)
+    generator.generate_statistics(valid_set_list=[], test_set_list=[])
+    generator.save_final_feature_dataset_for_analysis(perform_features)
+    
 else:
-    input_keys = VNET_INPUT_KEYS
-output_keys = VNET_OUTPUT_KEYS
+    # new version for models
+    if args.with_emotion:
+        input_keys = VNET_INPUT_KEYS_WITH_EMOTION
+    else:
+        input_keys = VNET_INPUT_KEYS
+    output_keys = VNET_OUTPUT_KEYS
 
-with_e1_qpm = args.with_e1_qpm
+    with_e1_qpm = args.with_e1_qpm
 
-if args.e1_to_input_feature_keys:
-    e1_to_input_feature_keys = PRIME_VNET_OUTPUT_KEYS
-else:
-    e1_to_input_feature_keys = None
+    if args.e1_to_input_feature_keys:
+        e1_to_input_feature_keys = PRIME_VNET_OUTPUT_KEYS
+    else:
+        e1_to_input_feature_keys = None
 
-output_for_classifier = args.output_for_classifier
-if output_for_classifier:
-    input_keys = VNET_INPUT_KEYS
-    e1_to_input_feature_keys = PRIME_VNET_OUTPUT_KEYS
-    with_e1_qpm = True
+    output_for_classifier = args.output_for_classifier
+    if output_for_classifier:
+        input_keys = VNET_INPUT_KEYS
+        e1_to_input_feature_keys = PRIME_VNET_OUTPUT_KEYS
+        with_e1_qpm = True
 
-generator = DataGenerator(emotion_pair_data, emotion_save_path)
-generator.generate_statistics(valid_set_list=EMOTION_VALID_LIST, test_set_list=EMOTION_TEST_LIST)
-generator.save_final_feature_dataset(input_feature_keys=input_keys,
-                                     output_feature_keys=output_keys, with_e1_qpm=with_e1_qpm, e1_to_input_feature_keys=e1_to_input_feature_keys,
-                                     output_for_classifier=output_for_classifier)
+    generator = DataGenerator(emotion_pair_data, emotion_save_path)
+    generator.generate_statistics(valid_set_list=EMOTION_VALID_LIST, test_set_list=EMOTION_TEST_LIST)
+    generator.save_final_feature_dataset(input_feature_keys=input_keys,
+                                        output_feature_keys=output_keys, with_e1_qpm=with_e1_qpm, e1_to_input_feature_keys=e1_to_input_feature_keys,
+                                        output_for_classifier=output_for_classifier)
