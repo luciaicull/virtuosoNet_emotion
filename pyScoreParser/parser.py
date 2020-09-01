@@ -20,4 +20,6 @@ def get_parser():
                         default=False)
     parser.add_argument("--output_for_classifier", type=bool,
                         default=False)
+    parser.add_argument("--for_analysis", type=bool,
+                        default=False)
     return parser
