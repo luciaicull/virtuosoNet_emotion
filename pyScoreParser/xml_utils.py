@@ -53,7 +53,7 @@ def xml_notes_to_midi(xml_notes):
 
 
 def find_tempo_change(xml_notes):
-    """ Returns position of note where the tempo changes
+    """ Returns position of note where the significant tempo changes
 
     Args:
         xml_notes (1-D list): list of Note() object in xml of shape (num_notes, )
@@ -73,10 +73,15 @@ def find_tempo_change(xml_notes):
     for note in xml_notes:
         current_abs_tempo = note.tempo.absolute
         current_rel_tempo = note.tempo.relative
-        if previous_abs_tempo != current_abs_tempo or previous_rel_tempo != current_rel_tempo:
+        #if previous_abs_tempo != current_abs_tempo or previous_rel_tempo != current_rel_tempo:
+        if previous_abs_tempo != current_abs_tempo: # when absolute tempo is changed
             tempo_change_positions.append(note.note_duration.xml_position)
             previous_abs_tempo = current_abs_tempo
             previous_rel_tempo = current_rel_tempo
+
+    # if no abs tempo in score, add first note position
+    if len(tempo_change_positions) is 0:
+        tempo_change_positions.append(xml_notes[0].note_duration.xml_position)
 
     tempo_change_positions.append(xml_notes[-1].note_duration.xml_position+0.1)
     return tempo_change_positions
